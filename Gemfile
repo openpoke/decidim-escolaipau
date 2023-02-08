@@ -3,13 +3,13 @@
 source "https://rubygems.org"
 
 ruby RUBY_VERSION
-# DECIDIM_VERSION={ git: "https://github.com/decidim/decidim.git", branch: "release/0.26-stable" }
-DECIDIM_VERSION="0.26.4"
+DECIDIM_VERSION={ git: "https://github.com/decidim/decidim.git", branch: "release/0.26-stable" }
+# DECIDIM_VERSION="0.26.4"
 
 gem "decidim", DECIDIM_VERSION
 # gem "decidim-conferences", DECIDIM_VERSION
 gem "decidim-consultations", DECIDIM_VERSION
-gem "decidim-decidim_awesome", git: "https://github.com/openpoke/decidim-module-decidim_awesome.git"
+gem "decidim-decidim_awesome", git: "https://github.com/decidim-ice/decidim-module-decidim_awesome.git"
 gem "decidim-term_customizer", git: "https://github.com/openpoke/decidim-module-term_customizer.git"
 gem "decidim-direct_verifications"
 # gem "decidim-elections", DECIDIM_VERSION
