@@ -14,7 +14,7 @@ gem "decidim-term_customizer", git: "https://github.com/openpoke/decidim-module-
 gem "decidim-direct_verifications"
 # gem "decidim-elections", DECIDIM_VERSION
 # gem "decidim-initiatives", DECIDIM_VERSION
-# gem "decidim-templates", DECIDIM_VERSION
+gem "decidim-templates", DECIDIM_VERSION
 
 gem "decidim-friendly_signup"
 gem "bootsnap", "~> 1.3"
@@ -42,6 +42,6 @@ end
 
 group :production do
   gem 'aws-sdk-s3', require: false
-  gem 'sidekiq', "~> 6.0"
-  gem 'sidekiq-cron', "~> 1.6.0"
+  gem 'sidekiq'
+  gem 'sidekiq-cron'
 end

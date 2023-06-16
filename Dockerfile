@@ -21,7 +21,8 @@ COPY ./package.json /app/package.json
 COPY ./Gemfile /app/Gemfile
 COPY ./Gemfile.lock /app/Gemfile.lock
 
-RUN bundle config --local without 'development test' && \
+RUN gem install bundler:$(grep -A 1 'BUNDLED WITH' Gemfile.lock | tail -n 1 | xargs) && \
+    bundle config --local without 'development test' && \
     bundle install -j4 --retry 3 && \
     # Remove unneeded gems
     bundle clean --force && \
@@ -40,7 +41,17 @@ RUN bundle config --local without 'development test' && \
 RUN npm ci
 
 # copy the rest of files
-COPY . /app
+COPY ./app /app/app
+COPY ./bin /app/bin
+COPY ./config /app/config
+COPY ./db /app/db
+COPY ./lib /app/lib
+COPY ./packages /app/packages
+COPY ./public/*.* /app/public/
+COPY ./config.ru /app/config.ru
+COPY ./Rakefile /app/Rakefile
+COPY ./babel.config.json /app/babel.config.json
+COPY ./postcss.config.js /app/postcss.config.js
 
 # Compile assets with Webpacker or Sprockets
 #
@@ -56,6 +67,7 @@ RUN mv config/credentials config/credentials.bak 2>/dev/null || true
 RUN RAILS_ENV=production \
     SECRET_KEY_BASE=dummy \
     RAILS_MASTER_KEY=dummy \
+    DB_ADAPTER=nulldb \
     bundle exec rails assets:precompile
 
 RUN mv config/credentials.yml.enc.bak config/credentials.yml.enc 2>/dev/null || true
@@ -67,7 +79,10 @@ RUN rm -rf node_modules tmp/cache vendor/bundle test spec app/packs .git
 FROM ruby:2.7-slim AS final
 
 RUN apt-get update && \
-    apt-get install -y postgresql-client imagemagick && \
+    apt-get install -y postgresql-client \
+    imagemagick \
+    curl \
+    supervisor && \
     apt-get clean
 
 EXPOSE 3000
@@ -76,6 +91,8 @@ ENV RAILS_LOG_TO_STDOUT true
 ENV RAILS_SERVE_STATIC_FILES true
 ENV RAILS_ENV production
 
+ARG RUN_RAILS
+ARG RUN_SIDEKIQ
 ARG COMMIT_SHA
 ARG COMMIT_TIME
 ARG COMMIT_VERSION
@@ -88,8 +105,16 @@ ENV COMMIT_VERSION ${COMMIT_VERSION}
 RUN addgroup --system --gid 1000 app && \
     adduser --system --uid 1000 --home /app --group app
 
+WORKDIR /app
+COPY ./entrypoint.sh /app/entrypoint.sh
+COPY ./supervisord.conf /etc/supervisord.conf 
 COPY --from=builder --chown=app:app /usr/local/bundle/ /usr/local/bundle/
 COPY --from=builder --chown=app:app /app /app
 
 USER app
-CMD ["/app/entrypoint.sh"]
+HEALTHCHECK --interval=1m --timeout=5s --start-period=30s \
+    CMD (curl -sSH "Content-Type: application/json" -d '{"query": "{ decidim { version } }"}' http://localhost:3000/api) || exit 1
+
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["/usr/bin/supervisord"]
